@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 const { useBrowser } = await import("../browser/store.ts");
 const model = await import("../browser/model.ts");
-const { closeNewTabBar, openFromNewTabBar, toggleNewTabBar } = await import("./newTabBar.ts");
+const { closeNewTabBar, openFromNewTabBar, showOnceOverEmptyCard, toggleNewTabBar } = await import("./newTabBar.ts");
 const { togglePinnedRows, forgetListSpots } = await import("../sidebar/movePinned.ts");
 
 const S = () => useBrowser.getState();
@@ -224,4 +224,24 @@ test("Move out of Pinned: two tabs pinned one after the other, unpinned together
   S().setSelection(w, [b, c]);
   togglePinnedRows(w);
   assert.deepEqual(list(w), ["https://a.com/", "https://b.com/", "https://c.com/", "https://d.com/"], "pinned in the other order");
+});
+
+test("a link's tab still loading its first page never gets the bar over it", () => {
+  reset("commandBar");
+  const { w } = windowWith("a");
+  const loading = S().newTab(w, { adoptId: "ardiacore:link-1", openerId: null });
+  assert.equal(urlOf(loading), "", "the engine has not reported a URL yet");
+  showOnceOverEmptyCard(w, loading);
+  assert.equal(panel(w).open, false, "no bar over a tab that already holds a page");
+  S().updateTab(loading, { url: "https://site.example/" });
+  showOnceOverEmptyCard(w, loading);
+  assert.equal(panel(w).open, false, "and none once its URL arrives");
+});
+
+test("a new empty tab still gets the bar once", () => {
+  reset("commandBar");
+  const { w } = windowWith("a");
+  const empty = S().newTab(w, {});
+  showOnceOverEmptyCard(w, empty);
+  assert.deepEqual(panel(w), { open: true, initialText: "", newTab: { kind: "into", tabId: empty } });
 });

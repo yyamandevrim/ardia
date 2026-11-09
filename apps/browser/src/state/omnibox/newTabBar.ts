@@ -66,6 +66,7 @@ const shownOver = new Set<string>();
 
 export function showOnceOverEmptyCard(windowId: string, tabId: string) {
   if (!NEW_TAB_BAR_POLICY.showOnceOverNewEmptyWindow || shownOver.has(tabId)) return;
+  if (!isEmptyCardTab(store(), store().tabs[tabId])) return;
   shownOver.add(tabId);
   if (launchTabs.has(tabId) && !NEW_TAB_BAR_POLICY.showOnLaunch) return;
   const s = store();
